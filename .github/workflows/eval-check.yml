@@ -1,0 +1,37 @@
+name: "Eval Check"
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+
+jobs:
+  eval_check:
+    name: Check for eval usage in Python
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+
+    - name: Run eval check
+      run: |
+        eval_found=false
+        for file in $(git diff --name-only ${{ github.event.before }} ${{ github.sha }}); do
+          if grep -q 'eval(' "$file"; then
+            echo "Eval found in file: $file"
+            eval_found=true
+          fi
+        done
+        if [ "$eval_found" = true ]; then
+          echo "Eval function found in code. Please review and remove."
+          exit 1
+        fi
